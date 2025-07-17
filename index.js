@@ -105,6 +105,165 @@ app.get("/posts", async (req, res) => {
   }
 });
 
+
+app.get("/", (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <title>Post Viewer</title>
+        <meta charset="UTF-8" />
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f9f9f9;
+            margin: 0;
+            padding: 2rem;
+            color: #333;
+          }
+
+          h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #2c3e50;
+          }
+
+          .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+          }
+
+          select, button {
+            padding: 10px 16px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+
+          select:hover, button:hover {
+            background: #eaeaea;
+          }
+
+          .posts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+          }
+
+          .post {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            padding: 1rem;
+            transition: transform 0.2s ease;
+          }
+
+          .post:hover {
+            transform: translateY(-3px);
+          }
+
+          .post h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.2rem;
+            color: #2980b9;
+          }
+
+          .post p {
+            margin: 0;
+          }
+
+          .info {
+            text-align: center;
+            margin-top: 2rem;
+            color: #777;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>📚 Post Viewer</h1>
+
+        <div class="controls">
+          <label for="limit">Posts per page:</label>
+          <select id="limit" onchange="resetAndLoad()">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+          </select>
+
+          <button onclick="prevPage()">⬅️ Previous</button>
+          <button onclick="nextPage()">Next ➡️</button>
+        </div>
+
+        <div id="output" class="posts"></div>
+        <div class="info" id="paginationInfo"></div>
+
+        <script>
+          let currentPage = 0;
+
+          function resetAndLoad() {
+            currentPage = 0;
+            loadPosts();
+          }
+
+          async function loadPosts() {
+            const limit = document.getElementById('limit').value;
+            const res = await fetch(\`/posts?limit=\${limit}&pageNumber=\${currentPage}\`);
+            const json = await res.json();
+
+            const output = document.getElementById('output');
+            const info = document.getElementById('paginationInfo');
+            output.innerHTML = '';
+            info.innerHTML = '';
+
+            const posts = json?.data?.data || [];
+
+            if (posts.length === 0) {
+              output.innerHTML = '<p>No posts available.</p>';
+              return;
+            }
+
+            posts.forEach(post => {
+              const div = document.createElement('div');
+              div.className = 'post';
+              div.innerHTML = '<h3>' + post.title + '</h3><p>' + post.body + '</p>';
+              output.appendChild(div);
+            });
+
+            const total = json.data.totalPosts;
+            info.innerHTML = \`Page \${currentPage + 1} — Showing \${posts.length} of \${total} total posts\`;
+          }
+
+          function nextPage() {
+            currentPage++;
+            loadPosts();
+          }
+
+          function prevPage() {
+            if (currentPage > 0) {
+              currentPage--;
+              loadPosts();
+            }
+          }
+
+          // Load first page initially
+          loadPosts();
+        </script>
+      </body>
+    </html>
+  `);
+});
+
+
+
 app.listen(PORT, () => console.log(`App listenig on port ${PORT}`));
 
 /*
